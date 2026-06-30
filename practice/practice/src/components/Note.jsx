@@ -1,7 +1,13 @@
+const Note = ({ note, toggleImportance }) => {
+  const label = note.important
+    ? 'make not important' : 'make important'
 
-const Note = ({ note }) => {
-    console.log('Note prop received from the array', note)
-    return < li > {note.content} </li >
+  return (
+    <li>
+      {note.content} 
+      <button onClick={toggleImportance}>{label}</button>
+    </li>
+  )
 }
 
 export default Note
