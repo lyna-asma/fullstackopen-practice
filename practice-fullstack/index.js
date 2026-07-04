@@ -6,7 +6,7 @@ const morgan = require('morgan')
 const app = express()
 app.use(express.json())
 app.use(cors())
-
+app.use(express.static('dist'))
 // custom us eof morgan instead of using the 'tiny ' style 
 
 morgan.token('body', (req) => {
