@@ -17,12 +17,25 @@ app.get('/api/notes', (request, response) => {
   })
 })
 
+// with not found error in case we  look for id non existant
 app.get('/api/notes/:id', (request, response) => {
-  Note.findById(request.params.id).then(note => {
-    response.json(note)
-  })
-})
+  Note.findById(request.params.id)
+    .then(note => {
 
+      if (note) {
+        response.json(note)
+      } else {
+        response.status(404).end()
+      }
+    })
+
+    .catch( error => next(error)
+
+      // The 400 (Bad Request) status code indicates that the server cannot or will not process the request due to something that
+      //  is perceived to be a client error (e.g., malformed request syntax, invalid request message framing, or deceptive request routing).
+     
+    )
+})
 app.post('/api/notes', (request, response) => {
   const body = request.body
   if (!body.content) {
@@ -37,11 +50,33 @@ app.post('/api/notes', (request, response) => {
   })
 })
 
-app.delete('/api/notes/:id', (request, response) => {
-  Note.findByIdAndDelete(request.params.id).then(() => {
-    response.status(204).end()
-  })
+app.delete('/api/notes/:id', (request, response, next) => {
+  Note.findByIdAndDelete(request.params.id)
+    .then(result => {
+      response.status(204).end()
+    })
+    .catch(error => next(error))
 })
+
+app.put('/api/notes/:id', (request, response, next) => {
+  const { content, important } = request.body
+
+  Note.findById(request.params.id)
+    .then(note => {
+      if (!note) {
+        return response.status(404).end()
+      }
+
+      note.content = content
+      note.important = important
+
+      return note.save().then((updatedNote) => {
+        response.json(updatedNote)
+      })
+    })
+    .catch(error => next(error))
+})
+
 
 const PORT = process.env.PORT || 3001
 app.listen(PORT, () => {
