@@ -21,8 +21,13 @@ mongoose.connect(url, { family: 4 })
 
   // creation of the schema for our model 
 const noteSchema = new mongoose.Schema({
-  content: String,
-  important: Boolean,
+
+  content: {
+    type: String,
+    minLength: 5,
+    required: true
+  },
+  important: Boolean
 })
 
 // toJSON transform to format the objects returned by Mongoose
