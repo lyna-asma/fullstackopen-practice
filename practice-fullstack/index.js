@@ -1,12 +1,11 @@
-// DNS fix for MongoDB Atlas connectivity issues on some networks
+// this is to fix DNS issue 
 require('dns').setServers(['8.8.8.8', '1.1.1.1'])
-// loading environment variables from .env file before anything else
+// to use env
 require('dotenv').config()
-// some important imports
+// some important imports s
 const express = require('express')
 const morgan = require('morgan')
-// importing the Person model from the models directory
-const Person = require('./models/person')
+const Note = require('./models/note')
 
 // app instance creation
 const app = express()
@@ -16,77 +15,80 @@ app.use(express.json())
 // static middleware to display the frontend files from /dist directory
 app.use(express.static('dist'))
 
-// morgan for logging some details to console useful for debugging
-// notice we first add body token to the rest bcz it doesn t come by default 
-morgan.token('body', (req) => {
-  return JSON.stringify(req.body)
-})
+// morgan for logging some details to console useful fro debugging
+// , notice we first add body token to the rest bcz it doesn t come by default 
+morgan.token('body', (req) => JSON.stringify(req.body))
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms :body'))
 
-// route handlers
 
-// get all route handler using find method from mongo model Person
-// notice the persons we get are people , this matches the collection name mongo creates for convenience (plural of Person)
-app.get('/api/persons', (request, response) => {
-  Person.find({}).then(persons => {
-    console.log(persons)
-    response.json(persons)
-  })
-})
+// route handlers 
 
-// create new person handler — notice the use of Person() constructor + save()
-// adapted to mongo from the previous array-based version
-app.post('/api/persons', (request, response) => {
-  const body = request.body  // extract the JSON body from the request
-
-  // validate — if name or number is missing, return 400 error
-  if (!body.name || !body.number) {
-    return response.status(400).json({ 
-      error: 'name or number missing' 
+// get all route handler using find methos from mongo model Note , notice the notes we get are note+s , this matches the doc  collection name mongo creates for convenience 
+app.get('/api/notes', (request, response, next) => {
+  Note.find({})
+    .then(notes => {
+      response.json(notes)
     })
-  }
-
-  // create a new Person document using the mongoose model
-  const person = new Person({
-    name: body.name,
-    number: body.number
-  })
-
-  // save to MongoDB — returns a promise
-  // once saved, send the saved person back as JSON response
-  person.save().then(savedPerson => {
-    response.json(savedPerson)
-  })
+    .catch(error => next(error))
 })
 
-// delete handler with mongo model method
-// 2 successful cases: either delete when non-existent person id, or delete an existing one
-// both return 204 no content since the end state is the same — the person doesn't exist
-app.delete('/api/persons/:id', (request, response, next) => {
-  Person.findByIdAndDelete(request.params.id)
+// with not found error in case we  look for id non existant
+app.get('/api/notes/:id', (request, response, next) => {
+  Note.findById(request.params.id)
+    .then(note => {
+
+      if (note) {
+        response.json(note)
+      } else {
+        response.status(404).end()
+      }
+    })
+
+    .catch( error => next(error))
+})
+
+// create new note hadler notice the use of  Note() constructor + save()
+app.post('/api/notes', (request, response, next) => {
+  const body = request.body
+  if (!body.content) {
+    return response.status(400).json({ error: 'content missing' })
+  }
+  const note = new Note({
+    content: body.content,
+    important: body.important || false,
+  })
+  note.save()
+    .then(savedNote => {
+      response.json(savedNote)
+    })
+    .catch(error => next(error))
+})
+
+// delete handler with mongo model method ( 2 successfull cases either delete when non existant note id , or delete an existant one)
+app.delete('/api/notes/:id', (request, response, next) => {
+  Note.findByIdAndDelete(request.params.id)
     .then(result => {
       response.status(204).end()
     })
     .catch(error => next(error))
 })
 
-// update handler with mongo model methods
-// notice the use of findById() + save() instead of findByIdAndUpdate()
-// this way mongoose validations run on the updated document
-app.put('/api/persons/:id', (request, response, next) => {
-  const { name, number } = request.body
 
-  Person.findById(request.params.id)
-    .then(person => {
-      if (!person) {
+// update handler with mongo model methods (notice the use of findById() + save() instead of findByIdAndUpdate())
+app.put('/api/notes/:id', (request, response, next) => {
+  const { content, important } = request.body
+
+  Note.findById(request.params.id)
+    .then(note => {
+      if (!note) {
         return response.status(404).end()
       }
 
-      person.name = name
-      person.number = number
+      note.content = content
+      note.important = important
 
-      return person.save().then((updatedPerson) => {
-        response.json(updatedPerson)
+      return note.save().then((updatedNote) => {
+        response.json(updatedNote)
       })
     })
     .catch(error => next(error))
@@ -94,45 +96,15 @@ app.put('/api/persons/:id', (request, response, next) => {
 
 
 
-// get by id handler 
-app.get('/api/persons/:id', (request, response, next) => {
-  Person.findById(request.params.id)
-    .then(person => {
-      if (person) {
-        response.json(person)
-      } else {
-        response.status(404).end()
-      }
-    })
-    .catch(error => next(error))
-})
-
-// get info page 
-app.get('/info', (request, response, next) => {
-  Person.countDocuments({})
-    .then(count => {
-      const requestTime = new Date().toString()
-      response.send(`
-        <p>Phonebook has info for ${count} people</p>
-        <p>${requestTime}</p>
-      `)
-    })
-    .catch(error => next(error))
-})
-
-
-// Before the last middleware => handler for requests with unknown endpoint
-// catches any route that doesn't match the defined ones above
+// before the last middleware => unknowreqhandler
 const unknownEndpoint = (request, response) => {
   response.status(404).send({ error: 'unknown endpoint' })
 }
-// its use — must be after all routes, before error handler
+// its use
 app.use(unknownEndpoint)
 
-/// last middleware => error handler
-// catches errors passed via next(error) from route handlers
-// handles CastError (malformed MongoDB id) with 400
-// passes everything else to the default Express error handler
+
+/// last middleware => errorhandler 
 const errorHandler = (error, request, response, next) => {
   console.error(error.message)
 
@@ -142,12 +114,10 @@ const errorHandler = (error, request, response, next) => {
 
   next(error)
 }
-// its use — must be the very last middleware loaded
+//its use
 app.use(errorHandler)
 
-// laaast one of all => the built-in error handler from Express ....(no code for it)
-// .........
-
+// laaast one of all => the built i error handler from express ....(no code fro it)
 
 const PORT = process.env.PORT || 3001
 app.listen(PORT, () => {
