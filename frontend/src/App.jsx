@@ -4,6 +4,7 @@ import noteService from './services/notes'
 import Notification from './components/Notification'
 import Footer from './components/Footer';
 
+
 const App = () => {
   const [notes, setNotes] = useState([])
   const [newNote, setNewNote] = useState('')
@@ -39,7 +40,7 @@ const App = () => {
       .then((returnedNote) => {
         setNotes(notes.map((note) => (note.id !== id ? note : returnedNote)))
       })
-     .catch(error => {
+     .catch(() => {
         setErrorMessage(
           `Note '${note.content}' was already removed from server`
         )

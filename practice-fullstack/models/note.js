@@ -1,33 +1,15 @@
-// importing the library necessary for the comm with the cluster 
+// importing the library necessary for the comm with the cluster
 // we use mongoose instead of mongodb for some prefrences
 const mongoose = require('mongoose')
 
-mongoose.set('strictQuery', false)
-
-// we get the url value from the env variable
-const url = process.env.MONGODB_URI
-
-// logging to console
-console.log('connecting to', url)
-
-// connecting wih the url we specify i env + consition to only accept IP4
-mongoose.connect(url, { family: 4 })
-  .then(result => {
-    console.log('connected to MongoDB')
-  })
-  .catch(error => {
-    console.log('error connecting to MongoDB:', error.message)
-  })
-
-  // creation of the schema for our model 
+// creation of the schema for our model
 const noteSchema = new mongoose.Schema({
-
   content: {
     type: String,
     minLength: 5,
     required: true
   },
-  important: Boolean
+  important: Boolean,
 })
 
 // toJSON transform to format the objects returned by Mongoose

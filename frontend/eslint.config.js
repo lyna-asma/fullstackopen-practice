@@ -14,6 +14,8 @@ export default defineConfig([
       reactRefresh.configs.vite,
     ],
     languageOptions: {
+      // like in the bakcend we have node , here w have the browsers variables like : windows , document ....
+      // we do this so that eslint doesn t flag them undefined and recognises them
       globals: globals.browser,
       parserOptions: { ecmaFeatures: { jsx: true } },
     },
