@@ -10,6 +10,9 @@ const logger = require('./utils/logger')
 const middleware = require('./utils/middleware')
 // noteRouter imports to get the route handlers (controller module) of notes instances
 const notesRouter = require('./controllers/notes')
+// userRouter
+const usersRouter = require('./controllers/users')
+const loginRouter = require('./controllers/login')
 
 // app instance creation
 const app = express()
@@ -34,6 +37,18 @@ app.use(middleware.requestLogger)
 // route handlers
 // all /api/notes routes are now handled by the notesRouter in controllers/notes.js
 app.use('/api/notes', notesRouter)
+// users router use
+app.use('/api/users', usersRouter)
+
+
+app.use('/api/login', loginRouter)
+
+
+
+
+
+
+
 
 // before the last middleware => unknown endpoint handler (moved to utils/middleware)
 app.use(middleware.unknownEndpoint)

@@ -6,10 +6,15 @@ const mongoose = require('mongoose')
 const noteSchema = new mongoose.Schema({
   content: {
     type: String,
-    minLength: 5,
-    required: true
+    required: true,
+    minlength: 5
   },
   important: Boolean,
+
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }
 })
 
 // toJSON transform to format the objects returned by Mongoose
