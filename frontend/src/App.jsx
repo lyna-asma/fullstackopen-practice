@@ -1,32 +1,35 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect , useRef } from 'react'
 import Footer from './components/Footer'
 import Note from './components/Note'
 import Notification from './components/Notification'
-import noteService from './services/notes'
 import loginService from './services/login'
+import noteService from './services/notes'
+import LoginForm from './components/LoginForm';
+import Togglable from './components/Togglable';
+import NoteForm  from './components/NoteForm';
 
 const App = () => {
   const [notes, setNotes] = useState([])
-  const [newNote, setNewNote] = useState('')
   const [showAll, setShowAll] = useState(true)
   const [errorMessage, setErrorMessage] = useState(null)
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [user, setUser] = useState(null)
+  
+  // refs
+   const noteFormRef = useRef()
 
-  // effects calls is here
-  //1
+  // "synchronizing state with an external system," 
   useEffect(() => {
     noteService.getAll().then(initialNotes => {
       setNotes(initialNotes)
     })
   }, [])
 
-  // 2
+  // 
   useEffect(() => {
     const loggedUserJSON = window.localStorage.getItem('loggedNoteappUser')
     if (loggedUserJSON) {
-      // turning the json into js object again so we can assign it 
       const user = JSON.parse(loggedUserJSON)
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setUser(user)
@@ -34,25 +37,26 @@ const App = () => {
     }
   }, [])
 
-  // event handlers
-  // 1
-  const addNote = event => {
-    event.preventDefault()
-    const noteObject = {
-      content: newNote,
-      important: Math.random() > 0.5
+
+
+    // by the time addNote runs, Togglable has already set
+    // noteFormRef.current = { toggleVisibility }
+    // so this line reaches INTO Togglable and closes its form
+
+
+  const addNote = (noteObject) => {
+    noteFormRef.current.toggleVisibility()
+    noteService
+      .create(noteObject)
+      .then(returnedNote => {     
+        setNotes(notes.concat(returnedNote))
+      })
     }
 
-    noteService.create(noteObject).then(returnedNote => {
-      setNotes(notes.concat(returnedNote))
-      setNewNote('')
-    })
-  }
-
-  // 2
   const toggleImportanceOf = id => {
     const note = notes.find(n => n.id === id)
     const changedNote = { ...note, important: !note.important }
+
     noteService
       .update(id, changedNote)
       .then(returnedNote => {
@@ -69,17 +73,14 @@ const App = () => {
       })
   }
 
-  // 3
+
   const handleLogin = async event => {
     event.preventDefault()
 
     try {
       const user = await loginService.login({ username, password })
 
-      window.localStorage.setItem(
-        'loggedNoteappUser', JSON.stringify(user)
-      )
-
+      window.localStorage.setItem('loggedNoteappUser', JSON.stringify(user))
       noteService.setToken(user.token)
       setUser(user)
       setUsername('')
@@ -92,57 +93,40 @@ const App = () => {
     }
   }
 
-  // 4
-  const handleNoteChange = event => {
-    setNewNote(event.target.value)
+ // const handleNoteChange = event => {
+ //   setNewNote(event.target.value)
+  //}
+
+  const notesToShow = showAll ? notes : notes.filter(note => note.important)
+
+  const loginForm = () => {
+
+    return (
+      <Togglable buttonLabel='login'>
+        <LoginForm
+          username={username}
+          password={password}
+          handleUsernameChange={({ target }) => setUsername(target.value)}
+          handlePasswordChange={({ target }) => setPassword(target.value)}
+          handleSubmit={handleLogin}
+        />
+      </Togglable>
+    )
   }
 
-  // HELPER FUNCTIONS
-  // 1
-  const loginForm = () => (
-    <form onSubmit={handleLogin}>
-      <div>
-        <label>
-          username
-          <input
-            type="text"
-            value={username}
-            onChange={({ target }) => setUsername(target.value)}
-          />
-        </label>
-      </div>
-      <div>
-        <label>
-          password
-          <input
-            type="password"
-            value={password}
-            // event.target is the specific DOM element that triggered the event — in this case, the exact <input> element
-            onChange={({ target }) => setPassword(target.value)}
-          />
-        </label>
-      </div>
-      <button type="submit">login</button>
-    </form>
-  )
-
-  // 2
+ 
   const noteForm = () => (
-    <form onSubmit={addNote}>
-      <input value={newNote} onChange={handleNoteChange} />
-      <button type="submit">save</button>
-    </form>
+     /* passing noteFormRef down as `ref` — React special-cases this prop name */
+    <Togglable buttonLabel='new note' ref={noteFormRef}>
+      <NoteForm createNote={addNote} />
+    </Togglable>
   )
-
-
-
-  // last check , what notes do we render ?? 
-  const notesToShow = showAll ? notes : notes.filter(note => note.important)
 
   return (
     <div>
       <h1>Notes</h1>
       <Notification message={errorMessage} />
+
       {!user && loginForm()}
       {user && (
         <div>
@@ -165,6 +149,7 @@ const App = () => {
           />
         ))}
       </ul>
+
       <Footer />
     </div>
   )
