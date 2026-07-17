@@ -4,9 +4,9 @@ import Note from './components/Note'
 import Notification from './components/Notification'
 import loginService from './services/login'
 import noteService from './services/notes'
-import LoginForm from './components/LoginForm';
-import Togglable from './components/Togglable';
-import NoteForm  from './components/NoteForm';
+import LoginForm from './components/LoginForm'
+import Togglable from './components/Togglable'
+import NoteForm  from './components/NoteForm'
 
 const App = () => {
   const [notes, setNotes] = useState([])
@@ -15,18 +15,18 @@ const App = () => {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [user, setUser] = useState(null)
-  
-  // refs
-   const noteFormRef = useRef()
 
-  // "synchronizing state with an external system," 
+  // refs
+  const noteFormRef = useRef()
+
+  // "synchronizing state with an external system,"
   useEffect(() => {
     noteService.getAll().then(initialNotes => {
       setNotes(initialNotes)
     })
   }, [])
 
-  // 
+  //
   useEffect(() => {
     const loggedUserJSON = window.localStorage.getItem('loggedNoteappUser')
     if (loggedUserJSON) {
@@ -39,19 +39,19 @@ const App = () => {
 
 
 
-    // by the time addNote runs, Togglable has already set
-    // noteFormRef.current = { toggleVisibility }
-    // so this line reaches INTO Togglable and closes its form
+  // by the time addNote runs, Togglable has already set
+  // noteFormRef.current = { toggleVisibility }
+  // so this line reaches INTO Togglable and closes its form
 
 
   const addNote = (noteObject) => {
     noteFormRef.current.toggleVisibility()
     noteService
       .create(noteObject)
-      .then(returnedNote => {     
+      .then(returnedNote => {
         setNotes(notes.concat(returnedNote))
       })
-    }
+  }
 
   const toggleImportanceOf = id => {
     const note = notes.find(n => n.id === id)
@@ -93,8 +93,8 @@ const App = () => {
     }
   }
 
- // const handleNoteChange = event => {
- //   setNewNote(event.target.value)
+  // const handleNoteChange = event => {
+  //   setNewNote(event.target.value)
   //}
 
   const notesToShow = showAll ? notes : notes.filter(note => note.important)
@@ -114,9 +114,9 @@ const App = () => {
     )
   }
 
- 
+
   const noteForm = () => (
-     /* passing noteFormRef down as `ref` — React special-cases this prop name */
+    /* passing noteFormRef down as `ref` — React special-cases this prop name */
     <Togglable buttonLabel='new note' ref={noteFormRef}>
       <NoteForm createNote={addNote} />
     </Togglable>
