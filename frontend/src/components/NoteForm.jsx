@@ -21,6 +21,9 @@ const NoteForm = ({ createNote }) => {
         <input
           value={newNote}
           onChange={event => setNewNote(event.target.value)}
+          placeholder='write note content here'
+          //for the querySelector find method in NoteForm test , we add :
+          // id='note-input'
         />
         <button type="submit">save</button>
       </form>
