@@ -42,6 +42,12 @@ app.use('/api/users', usersRouter)
 
 app.use('/api/login', loginRouter)
 
+// testing with playwright requires routers of its own bcz of access to DB
+if (process.env.NODE_ENV === 'test') {
+  const testingRouter = require('./controllers/testing')
+  app.use('/api/testing', testingRouter)
+}
+
 // before the last middleware => unknown endpoint handler (moved to utils/middleware)
 app.use(middleware.unknownEndpoint)
 
