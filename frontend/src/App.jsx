@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import noteService from './services/notes'
-
+import { Container, AppBar, Toolbar, Button } from '@mui/material'
 import {
   BrowserRouter as Router,
   Routes, Route, Link, useMatch
@@ -10,9 +10,11 @@ import Home from './components/Home'
 import Footer from './components/Footer'
 import NoteForm from './components/NoteForm'
 import Note from './components/Note'
+import Notification from './components/Notification';
 
 const App = () => {
   const [notes, setNotes] = useState([])
+  const [notification, setNotification] = useState(null)
 
   useEffect(() => {
     noteService.getAll().then(initialNotes => {
@@ -30,6 +32,7 @@ const App = () => {
   const addNote = noteObject => {
     noteService.create(noteObject).then(returnedNote => {
       setNotes(notes.concat(returnedNote))
+      setNotification({ text: `Note '${returnedNote.content}' added!`, type: 'success' })
     })
   }
 
@@ -58,19 +61,26 @@ const App = () => {
   const padding = {
     padding: 5
   }
-
+const style = { '&:hover': { bgcolor: 'rgba(255,255,255,0.3)' } }
   return (
-    <div>
-      {/* This is BrowserRouter - enables URL-based navigation */}
+    <Container>
 
-      {/* NAVIGATION BAR - always visible, doesn't change */}
-      <div>
-        <Link to="/">home</Link>        {/* Renders as <a href="/"> */}
-        <Link to="/notes">notes</Link>  {/* Renders as <a href="/notes"> */}
-        <Link to="/create">new note</Link>
-      </div>
+      <AppBar position="static">
+        <Toolbar>
+          <Button color="inherit" component={Link} to="/" sx={style}>
+            home
+          </Button>
+          <Button color="inherit" component={Link} to="/notes" sx={style}>
+            notes
+          </Button>
+          <Button color="inherit" component={Link} to="/create" sx={style}>
+            new note
+          </Button>
+        </Toolbar>
+      </AppBar>
 
-      {/* CONTENT AREA - changes based on URL */}
+      <Notification notification={notification} />
+
       <Routes>
         <Route path="/notes/:id" element={
           <Note
@@ -80,7 +90,7 @@ const App = () => {
           />
         } />
         <Route path="/notes" element={
-          <NoteList notes={notes} />
+          <NoteList notes={notes} setNotification={setNotification} />
         } />
         <Route path="/create" element={
           <NoteForm createNote={addNote} />
@@ -88,10 +98,8 @@ const App = () => {
         <Route path="/" element={<Home />} />
       </Routes>
 
-      <div>
-        <em>Note app, Department of Computer Science 2026</em>
-      </div>
-    </div>
+      <Footer />
+    </Container>
   )
 }
 
